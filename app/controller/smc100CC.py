@@ -1,7 +1,7 @@
 import serial
 import time
 from serial import SerialException
-#test444
+#test5
 class smc100:
     def __init__(self, port):
         self.serial=serial.Serial()
