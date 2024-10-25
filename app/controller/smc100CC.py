@@ -1,7 +1,7 @@
 import serial
 import time
 from serial import SerialException
-
+#test
 class smc100:
     def __init__(self, port):
         self.serial=serial.Serial()
@@ -24,5 +24,6 @@ class smc100:
     
     def get_pos(self,pos):
         return pos
+    
 
     
