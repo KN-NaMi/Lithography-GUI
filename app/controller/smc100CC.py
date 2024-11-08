@@ -49,20 +49,20 @@ class smc100:
         try:
             self.serial.open()
         except SerialException:
-            return
+            logger.critical("Serial not working")
 
-        self._detect_devices(devices)
-        print(self.devices)
+        # self._detect_devices(devices)
+        # print(self.devices)
 
-    def get_state(self, devices):
+    def get_state(self):
         try:
             s=self.send_rcv("01TS")
-            device_state=state_map[s[-2:]]
-            self.state.states[devices-1]=device_state
-            print (device_state)
-            return device_state
+            s2=s.decode()[-2:]
+            device_state=state_map.get(s2)
+            print(device_state)
+            
         except KeyError:
-            return 'Strange Error'
+            logger.debug("Couldn't get state")
             
         
     def _detect_devices(self, max_devices):
@@ -100,8 +100,7 @@ class smc100:
         state2 = self.send_rcv("02TP")
         pos2 = self.send_rcv("02TP")
 
-        print(f'1{pos1} 2{pos2}')
-
+        print(f'1 {pos1} \n 2 {pos2}')
 
     def reset(self):
         self.send('01RS')
@@ -109,9 +108,8 @@ class smc100:
 
     
 c = smc100("COM4")
-c.move_absolute(1,5)
-c.move_absolute(2,10)
-#c.get_state(1)
+
+c.get_state()
 #logger.error("No such device")
 # ports = serial.tools.list_ports.comports()
 # c.move_absolute(1,1)

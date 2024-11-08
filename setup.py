@@ -8,7 +8,8 @@ setup(
         "serial==0.0.97",
         "nicegui==2.4",
         "setuptools==75.2.0",
-        "pywebview==5.3.2"
+        "pywebview==5.3.2",
+        "logging==0.4.9.6"
     ],
     python_requires=">=3.12.1",
 
