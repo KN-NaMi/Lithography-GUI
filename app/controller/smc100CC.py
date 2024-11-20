@@ -45,14 +45,34 @@ class smc100:
         self.serial.stopbits = serial.STOPBITS_ONE
         self.devices = []
         self.states=[None]
-
+        print(self.states)
         try:
             self.serial.open()
         except SerialException:
             logger.critical("Serial not working")
+    
+    # def verify(func):
+    #     def wrapper(self, *args, **kwargs):
+    #         if args[0] not in self.devices:
+    #             logger.error("Device not found!")
+    #             return
+    #         return func(self, *args, **kwargs)
+    #     return wrapper
+    
+    def check_state(valid_states):
+        def decorator(func):
+            def wrapper(self, *args, **kwargs):
+                current_state_code = self.send_rcv("01TS").decode()[-2:]
+                current_state = state_map.get(current_state_code, "UNKNOWN STATE")
 
-        # self._detect_devices(devices)
-        # print(self.devices)
+                if current_state_code in valid_states:
+                    logger.info(f"Current state: {current_state}. Proceeding with {func.__name__}.")
+                    return func(self, *args, **kwargs)
+                else:
+                    logger.warning(f"Cannot perform {func.__name__}. Device is in state: {current_state}.")
+                    return None 
+            return wrapper
+        return decorator
 
     def get_state(self):
         try:
@@ -61,10 +81,10 @@ class smc100:
             device_state=state_map.get(s2)
             print(device_state)
             
-        except KeyError:
+        except KeyError:    
             logger.debug("Couldn't get state")
             
-        
+    
     def _detect_devices(self, max_devices):
         self.send(f'01TS')
         for device_id in range(1, max_devices+1):
@@ -88,12 +108,15 @@ class smc100:
         else:
            logger.error("No such device")
 
+    @check_state(valid_states=["32", "33","34","35"])
     def move_relative(self, controller, position):
         self.send(f'{controller:02d}PR{position:f}')
-    
+
+    @check_state(valid_states=["32", "33","34","35"])
     def move_absolute(self, controller, position):
         self.send(f'{controller:02d}PA{position:f}')
-
+    
+    @check_state(valid_states=["32", "33","34","35"])
     def get_pos(self):
         state = self.send_rcv("01TP")
         pos1 = self.send_rcv("01TP")
@@ -108,33 +131,4 @@ class smc100:
 
     
 c = smc100("COM4")
-
 c.get_state()
-#logger.error("No such device")
-# ports = serial.tools.list_ports.comports()
-# c.move_absolute(1,1)
-# c.move_absolute(2,2)
-# time.sleep(1)
-# c.get_pos()
-#c.send_rcv('02OR')
-#c.send('01OR')
-# c.move_absolute(1, -10)
-# c.move_absolute(1,0)
-# while True:
-#     x = int(input("x= "))
-#     c.move_relative(1, x)
-#     c.move_relative(2, x)
-    # c.move_relative(1, -1)
-    # c.move_relative(2, -1)
-    # time.sleep(1)
-    # c.move_absolute(1, 20)
-    # c.move_absolute(2, 20)
-
-# if ports:
-
-#     for port in ports:
-#         print(port.device)
-# else:
-#     print("aha")
-
-    
