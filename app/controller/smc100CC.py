@@ -11,6 +11,8 @@ logging.basicConfig(filename='smc100.log',format='%(asctime)s %(message)s', date
 
 #linkacz do repo ziomka
 #https://github.com/jieunboy0516/Newport-SMC100-Motor-Controller-Library---Python/blob/main/smc100_base.py
+
+#01TS,02TS - > 01OR, 02OR - > move
 state_map=\
 	{'0A': 'NOT REFERENCED from reset',
 	'0B': 'NOT REFERENCED from HOMING',
@@ -45,31 +47,29 @@ class smc100:
         self.serial.stopbits = serial.STOPBITS_ONE
         self.devices = []
         self.states=[None]
-        print(self.states)
+        
         try:
             self.serial.open()
+            self._detect_devices(devices)
         except SerialException:
             logger.critical("Serial not working")
-    
-    # def verify(func):
-    #     def wrapper(self, *args, **kwargs):
-    #         if args[0] not in self.devices:
-    #             logger.error("Device not found!")
-    #             return
-    #         return func(self, *args, **kwargs)
-    #     return wrapper
-    
+
+
+
     def check_state(valid_states):
         def decorator(func):
             def wrapper(self, *args, **kwargs):
-                current_state_code = self.send_rcv("01TS").decode()[-2:]
-                current_state = state_map.get(current_state_code, "UNKNOWN STATE")
-
-                if current_state_code in valid_states:
-                    logger.info(f"Current state: {current_state}. Proceeding with {func.__name__}.")
+                current_state_code1 = self.send_rcv("01TS").decode()[-2:] 
+                current_state_code2 = self.send_rcv("02TS").decode()[-2:] 
+                current_state1 = state_map.get(current_state_code1, "UNKNOWN STATE")
+                current_state2 = state_map.get(current_state_code2, "UNKNOWN STATE")
+                if current_state_code1 or current_state2 in valid_states:
+                    logger.info(f"Current state of first controller: {current_state1}. Proceeding with {func.__name__}.")
+                    logger.info(f"Current state of second controller: {current_state2}. Proceeding with {func.__name__}.")
                     return func(self, *args, **kwargs)
                 else:
-                    logger.warning(f"Cannot perform {func.__name__}. Device is in state: {current_state}.")
+                    logger.warning(f"Cannot perform {func.__name__}. Device one is in state: {current_state1}.")
+                    logger.warning(f"Cannot perform {func.__name__}. Device two is in state: {current_state2}.")
                     return None 
             return wrapper
         return decorator
@@ -115,15 +115,14 @@ class smc100:
     @check_state(valid_states=["32", "33","34","35"])
     def move_absolute(self, controller, position):
         self.send(f'{controller:02d}PA{position:f}')
-    
+
+    #do zmiany warunki
     @check_state(valid_states=["32", "33","34","35"])
     def get_pos(self):
-        state = self.send_rcv("01TP")
         pos1 = self.send_rcv("01TP")
-        state2 = self.send_rcv("02TP")
         pos2 = self.send_rcv("02TP")
 
-        print(f'1 {pos1} \n 2 {pos2}')
+        print(f'1 {pos1} \n2 {pos2}')
 
     def reset(self):
         self.send('01RS')
@@ -131,4 +130,19 @@ class smc100:
 
     
 c = smc100("COM4")
-c.get_state()
+
+#trojkat 
+# c.move_absolute(1, -50)
+# c.move_absolute(2, -50)
+# time.sleep(10)
+# c.move_absolute(1, 50)
+# time.sleep(3)
+# c.move_absolute(2, 50)
+# time.sleep(3)
+# c.move_absolute(1, -50)
+# time.sleep(3)
+# c.move_absolute(2, -50)
+# time.sleep(3)
+# c.move_absolute(1, 1)
+# c.move_absolute(2, 1)
+# time.sleep(5)
