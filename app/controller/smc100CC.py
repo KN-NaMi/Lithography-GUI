@@ -5,14 +5,6 @@ import serial.tools.list_ports
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='smc100.log',format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', encoding='utf-8', level=logging.DEBUG)
-
-#linkacz do manuala
-#https://www.newport.com/medias/sys_master/images/images/h8d/h3a/8797263101982/SMC100CC-SMC100PP-User-Manual.pdf
-
-#linkacz do repo ziomka
-#https://github.com/jieunboy0516/Newport-SMC100-Motor-Controller-Library---Python/blob/main/smc100_base.py
-
-#01TS,02TS - > 01OR, 02OR - > move
 state_map=\
 	{'0A': 'NOT REFERENCED from reset',
 	'0B': 'NOT REFERENCED from HOMING',
@@ -49,56 +41,61 @@ class smc100:
         self.states=[None]
         
         try:
+            
             self.serial.open()
             self._detect_devices(devices)
+            
         except SerialException:
             logger.critical("Serial not working")
-
 
 
     def check_state(valid_states):
         def decorator(func):
             def wrapper(self, *args, **kwargs):
-                current_state_code1 = self.send_rcv("01TS").decode()[-2:] 
-                current_state_code2 = self.send_rcv("02TS").decode()[-2:] 
-                current_state1 = state_map.get(current_state_code1, "UNKNOWN STATE")
-                current_state2 = state_map.get(current_state_code2, "UNKNOWN STATE")
-                if current_state_code1 or current_state2 in valid_states:
-                    logger.info(f"Current state of first controller: {current_state1}. Proceeding with {func.__name__}.")
-                    logger.info(f"Current state of second controller: {current_state2}. Proceeding with {func.__name__}.")
+                all_valid = True
+                for device_id in self.devices:
+                    state_code = self.send_rcv(f"{device_id}TS").decode()[-2:]
+                    print(state_code)
+                    state = state_map.get(state_code, "UNKNOWN STATE")
+                    
+                    if state_code not in valid_states:
+                        logger.warning(f"Device {device_id} is in an invalid state: {state}. Cannot perform {func.__name__}.")
+                        all_valid = False
+                    else:
+                        logger.info(f"Device {device_id} is in a valid state ({state}). Proceeding with {func.__name__}")
+                if all_valid:
                     return func(self, *args, **kwargs)
                 else:
-                    logger.warning(f"Cannot perform {func.__name__}. Device one is in state: {current_state1}.")
-                    logger.warning(f"Cannot perform {func.__name__}. Device two is in state: {current_state2}.")
-                    return None 
+                    logger.error(f"Command {func.__name__} aborted. One or more devices are in invalid states.")
+                    return None
             return wrapper
         return decorator
 
     def get_state(self):
         try:
-            s=self.send_rcv("01TS")
-            s2=s.decode()[-2:]
-            device_state=state_map.get(s2)
-            print(device_state)
-            
+            for device_id in self.devices:
+                state_code=self.send_rcv(f'{device_id:02d}TS').decode()[-2:]
+                state = state_map.get(state_code, "UNKNOWN STATE")
+                logger.info(f"Device {device_id}: State - {state}")
         except KeyError:    
             logger.debug("Couldn't get state")
             
     
     def _detect_devices(self, max_devices):
-        self.send(f'01TS')
-        for device_id in range(1, max_devices+1):
-            self.send(f'{device_id:02d}OR')
-            self.devices.append(f"{device_id:02d}")
-                 
+        try:
+            self.send(f'01TS') 
+            for device_id in range(1, max_devices+1):
+                self.send(f'{device_id:02d}OR')
+                self.devices.append(f"{device_id:02d}")
+        except:
+            logger.critical("There was a problem detecting your devices")
+       
+    
     def send(self, command):
        if command[2:] or command[1:] in self.devices:
         self.serial.write((command+'\r\n').encode())
        else:
            logger.error("No such device")
-
-    def kill (self):
-        self.serial.close()
 
     def send_rcv(self, command):
         if command[2:] or command[1:] in self.devices:
@@ -108,41 +105,33 @@ class smc100:
         else:
            logger.error("No such device")
 
-    @check_state(valid_states=["32", "33","34","35"])
+    @check_state(valid_states=["32","33","34","35"])
     def move_relative(self, controller, position):
         self.send(f'{controller:02d}PR{position:f}')
 
-    @check_state(valid_states=["32", "33","34","35"])
+    @check_state(valid_states=["32","33","34","35"])
     def move_absolute(self, controller, position):
         self.send(f'{controller:02d}PA{position:f}')
 
-    #do zmiany warunki
-    @check_state(valid_states=["32", "33","34","35"])
+    @check_state(valid_states=["32","33","34","35"])
     def get_pos(self):
-        pos1 = self.send_rcv("01TP")
-        pos2 = self.send_rcv("02TP")
+        for device_id in self.devices:
+            pos=self.send_rcv(f'{device_id:02d}TP')
+            logger.info(f"Device{device_id} is in {pos} position")
 
-        print(f'1 {pos1} \n2 {pos2}')
+c = smc100("COM3")
 
-    def reset(self):
-        self.send('01RS')
-
-
-    
-c = smc100("COM4")
-
-#trojkat 
-# c.move_absolute(1, -50)
-# c.move_absolute(2, -50)
-# time.sleep(10)
-# c.move_absolute(1, 50)
-# time.sleep(3)
-# c.move_absolute(2, 50)
-# time.sleep(3)
-# c.move_absolute(1, -50)
-# time.sleep(3)
-# c.move_absolute(2, -50)
-# time.sleep(3)
-# c.move_absolute(1, 1)
-# c.move_absolute(2, 1)
-# time.sleep(5)
+c.move_absolute(1, -50)
+c.move_absolute(2, -50)
+time.sleep(10)
+c.move_absolute(1, 50)
+time.sleep(3)
+c.move_absolute(2, 50)
+time.sleep(3)
+c.move_absolute(1, -50)
+time.sleep(3)
+c.move_absolute(2, -50)
+time.sleep(3)
+c.move_absolute(1, 1)
+c.move_absolute(2, 1)
+time.sleep(5)
