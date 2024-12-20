@@ -55,7 +55,7 @@ class smc100:
                 all_valid = True
                 for device_id in self.devices:
                     state_code = self.send_rcv(f"{device_id}TS").decode()[-2:]
-                    print(state_code)
+                    print(f"Stan: {state_code}, Urzadzenie: {device_id}")
                     state = state_map.get(state_code, "UNKNOWN STATE")
                     
                     if state_code not in valid_states:
@@ -119,19 +119,19 @@ class smc100:
             pos=self.send_rcv(f'{device_id:02d}TP')
             logger.info(f"Device{device_id} is in {pos} position")
 
-c = smc100("COM3")
-
-c.move_absolute(1, -50)
-c.move_absolute(2, -50)
-time.sleep(10)
-c.move_absolute(1, 50)
-time.sleep(3)
-c.move_absolute(2, 50)
-time.sleep(3)
-c.move_absolute(1, -50)
-time.sleep(3)
-c.move_absolute(2, -50)
-time.sleep(3)
-c.move_absolute(1, 1)
-c.move_absolute(2, 1)
-time.sleep(5)
+# c = smc100("COM3")
+# c.move_absolute(1, -50)
+# time.sleep(3)
+# c.move_absolute(2, 50)
+# time.sleep(10)
+# c.move_absolute(1, 50)
+# time.sleep(3)
+# c.move_absolute(2, 50)
+# time.sleep(3)
+# c.move_absolute(1, -50)
+# time.sleep(3)
+# c.move_absolute(2, -50)
+# time.sleep(3)
+# c.move_absolute(1, 1)
+# c.move_absolute(2, 1)
+# time.sleep(5)

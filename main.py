@@ -1,10 +1,36 @@
 import webview
-
+from app.controller.smc100CC import *
 
 class Api:
-    def button_click(self, label):
-        print(f"Button clicked: {label}")
-        return f"You clicked {label}!"
+    def button_10Y_DOWN(self):
+        c.move_relative(1, 10)
+        
+    def button_10Y_UP(self):
+        c.move_relative(1, -10)
+
+    def button_10X_RIGHT(self):
+        c.move_relative(2, 10)
+    
+    def button_10X_LEFT(self):
+        c.move_relative(2, -10)
+    
+
+    def button_1Y_UP(self):
+        c.move_relative(1, -1)
+        
+    def button_1Y_DOWN(self):
+        c.move_relative(1, 1)
+
+    def button_1X_RIGHT(self):
+        c.move_relative(2, 1)
+    
+    def button_1X_LEFT(self):
+        c.move_relative(2, -1)
+
+    def button_HOME(self):
+        c.move_absolute(1,0)
+        time.sleep(3)
+        c.move_absolute(2,0)
 
 html_content = """
 <!DOCTYPE html>
@@ -391,31 +417,31 @@ html_content = """
         <div class="container">
             <div class="circle-wrapper">
                 <div class="circle-container outer-circle">
-                    <button class="circle-button" data-value="+10">
+                    <button class="circle-button"  onclick="handleButtonClick10Y_UP()" data-value="+10">
                         <div class="button-content mr-20 mb-20">+10</div>
                     </button>
-                    <button class="circle-button" data-value="+10">
+                    <button class="circle-button" onclick="handleButtonClick10X_RIGHT()" data-value="+10">
                         <div class="button-content ml-20 mb-20">+10</div>
                     </button>
-                    <button class="circle-button" data-value="-10">
+                    <button class="circle-button" onclick="handleButtonClick10X_LEFT()" data-value="-10">
                         <div class="button-content mr-20 mt-20">-10</div>
                     </button>
-                    <button class="circle-button" data-value="-10">
+                    <button class="circle-button" onclick="handleButtonClick10Y_DOWN()" data-value="-10">
                         <div class="button-content mt-20 ml-20">-10</div>
                     </button>
                 </div>
 
                 <div class="circle-container inner-circle">
-                    <button class="circle-button" data-value="+1">
+                    <button class="circle-button" onclick="handleButtonClick1Y_UP()" data-value="+1">
                         <div class="button-content mr-20 mb-20">+1</div>
                     </button>
-                    <button class="circle-button" data-value="+1">
+                    <button class="circle-button" onclick="handleButtonClick1X_RIGHT()" data-value="+1">
                         <div class="button-content ml-20 mb-20">+1</div>
                     </button>
-                    <button class="circle-button" data-value="-1">
+                    <button class="circle-button" onclick="handleButtonClick1X_LEFT()" data-value="-1">
                         <div class="button-content mr-20 mt-20">-1</div>
                     </button>
-                    <button class="circle-button" data-value="-1">
+                    <button class="circle-button" onclick="handleButtonClick1Y_DOWN()" data-value="-1">
                         <div class="button-content mt-20 ml-20">-1</div>
                     </button>
                 </div>
@@ -426,7 +452,7 @@ html_content = """
                     <span class="axis-label" style="grid-area: -X;">-X</span>
                     <span class="axis-label" style="grid-area: -Y;">-Y</span>
 
-                    <button class="home-button" data-value="home">
+                    <button class="home-button" onclick = "handleButtonClickHOME()" data-value="home">
                         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed">
                             <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z" />
                         </svg>
@@ -549,7 +575,7 @@ html_content = """
 </div>
 
     <script>
-             document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function() {
             const selectButton = document.querySelector('.select-button');
             const optionsList = document.querySelector('.options-list');
             const options = document.querySelectorAll('.option-item');
@@ -560,7 +586,6 @@ html_content = """
                 optionsList.classList.toggle('show');
             });
 
-            // Select option
             options.forEach(option => {
                 option.addEventListener('click', function() {
                     // Remove selected class from all options
@@ -579,7 +604,6 @@ html_content = """
                 });
             });
 
-            // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 if (!selectButton.contains(e.target) && !optionsList.contains(e.target)) {
                     optionsList.classList.remove('show');
@@ -588,7 +612,6 @@ html_content = """
             });
         });
 
-        // UV intensity slider
     const uvIntensitySlider = document.getElementById('uv-intensity');
     const uvIntensityValue = document.getElementById('uv-intensity-value');
     
@@ -596,7 +619,6 @@ html_content = """
         uvIntensityValue.textContent = this.value + '%';
     });
 
-    // RED mode toggle button
     const redToggle = document.getElementById('red-toggle');
     let isRedOn = false;
 
@@ -606,24 +628,59 @@ html_content = """
         this.classList.toggle('active', isRedOn);
     });
 
-    // Expose time input validation
     const exposeTimeInput = document.getElementById('expose-time');
     exposeTimeInput.addEventListener('input', function() {
         if (this.value < 0) this.value = 0;
     });
 
-    // Red intensity input validation
     const redIntensityInput = document.getElementById('red-intensity');
     redIntensityInput.addEventListener('input', function() {
         if (this.value < 0) this.value = 0;
         if (this.value > 100) this.value = 100;
     });
+
+    function handleButtonClick10Y_UP() {
+    pywebview.api.button_10Y_UP();
+    }
+
+    function handleButtonClick10Y_DOWN() {
+    pywebview.api.button_10Y_DOWN();
+    }
+
+    function handleButtonClick10X_RIGHT() {
+    pywebview.api.button_10X_RIGHT();
+    }
+
+    function handleButtonClick10X_LEFT() {
+    pywebview.api.button_10X_LEFT();
+    }
+    
+    function handleButtonClick1Y_UP() {
+    pywebview.api.button_1Y_UP();
+    }
+
+    function handleButtonClick1Y_DOWN() {
+    pywebview.api.button_1Y_DOWN();
+    }
+
+    function handleButtonClick1X_RIGHT() {
+    pywebview.api.button_1X_RIGHT();
+    }
+
+    function handleButtonClick1X_LEFT() {
+    pywebview.api.button_1X_LEFT();
+    }
+
+    function handleButtonClickHOME() {
+    pywebview.api.button_HOME();
+    }
     </script>
 </body>
 </html>
 """
 
 if __name__ == "__main__":
+    c = smc100("COM3")
     api = Api()
     webview.create_window("Circle Menu", html=html_content, js_api=api)
     webview.start()
